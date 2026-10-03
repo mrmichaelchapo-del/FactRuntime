@@ -11,7 +11,124 @@
   <div class="nav-links">
     <a href="#">Home</a>
     <a href="#">About</a>
-    <a href="#">Services</a>
+    <button class="more-btn" id="moreBtn">...</button>
+
+<div class="tools-menu" id="toolsMenu">
+  <button onclick="findJS()">Find</button>
+  <button onclick="focusJS()">Focus Editor</button>
+  <button onclick="clearJS()">Clear</button>
+</div>
+
+<style>
+.more-btn {
+  background: transparent;
+  color: #ccc;
+  border: 0;
+  padding: 4px 8px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.more-btn:hover {
+  background: #2a2d2e;
+  color: white;
+}
+
+.tools-menu {
+  display: none;
+  position: absolute;
+  background: #252526;
+  border: 1px solid #454545;
+  min-width: 160px;
+  z-index: 1000;
+}
+
+.tools-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: 0;
+  color: #ccc;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tools-menu button:hover {
+  background: #094771;
+  color: white;
+}
+
+.tools-menu.show {
+  display: block;
+}
+</style>
+
+<script>
+const moreBtn = document.getElementById("moreBtn");
+const toolsMenu = document.getElementById("toolsMenu");
+
+moreBtn.onclick = () => {
+  toolsMenu.classList.toggle("show");
+};
+
+function getJSEditor() {
+  // for a JavaScript editor component!
+  return document.querySelector("#js-editor");
+}
+
+function focusJS() {
+  const editor = getJSEditor();
+
+  if (!editor) {
+    alert("No element with id=\"js-editor\" was found.");
+    return;
+  }
+
+  editor.focus();
+}
+
+function findJS() {
+  const editor = getJSEditor();
+
+  if (!editor) {
+    alert("No element with id=\"js-editor\" was found.");
+    return;
+  }
+
+  const search = prompt("Find in JavaScript:");
+
+  if (!search) return;
+
+  const text = editor.textContent || "";
+
+  if (text.toLowerCase().includes(search.toLowerCase())) {
+    alert(`Found "${search}".`);
+  } else {
+    alert(`"${search}" was not found.`);
+  }
+}
+
+function clearJS() {
+  const editor = getJSEditor();
+
+  if (!editor) {
+    alert("No element with id=\"js-editor\" was found.");
+    return;
+  }
+
+  editor.textContent = "";
+  editor.focus();
+}
+
+document.addEventListener("click", event => {
+  if (!moreBtn.contains(event.target) &&
+      !toolsMenu.contains(event.target)) {
+    toolsMenu.classList.remove("show");
+  }
+});
+</script>
     <a href="/download">Download</a>
   </div>
 </nav>
