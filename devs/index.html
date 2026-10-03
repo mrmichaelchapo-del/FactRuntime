@@ -25,5 +25,7 @@ let pendingAICode="";
 async function fixJSCode(){const r=document.getElementById("ai-request").value.trim(),s=document.getElementById("ai-status"),p=document.getElementById("ai-preview");if(!r)return s.textContent="Describe what you want fixed.";let c;try{c=getJSFromEditor()}catch(e){return s.textContent=e.message}s.textContent="AI is analyzing the JavaScript...";p.hidden=true;try{const x=await fetch("/api/ai/fix-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({request:r,code:c,language:"javascript",source:"scratch-to-js"})});if(!x.ok)throw Error("AI request failed: HTTP "+x.status);const d=await x.json();if(!d.code)throw Error("The AI did not return corrected JavaScript.");pendingAICode=d.code;document.getElementById("ai-code").textContent=d.code;p.hidden=false;s.textContent="Fix ready. Review it before applying."}catch(e){s.textContent=e.message}}
 function applyAICode(){if(!pendingAICode)return;try{setJSInEditor(pendingAICode);document.getElementById("ai-status").textContent="Fix applied to #js-editor.";setTimeout(closeAIModal,500)}catch(e){document.getElementById("ai-status").textContent=e.message}}
 </script>
+
+<p>Go to the guide for project syntax on FactRuntime project JS!</p>
 </body>
 </html>
