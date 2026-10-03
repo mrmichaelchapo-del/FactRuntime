@@ -8,6 +8,7 @@ zip.file("metadata.json", JSON.stringify({
   compiled: {}
 }, null, 2));
 zip.file("manifest", "Manifested");
+zip.folder("assets").file("project.js", "sprite.flag(sprite.say("Hello World!")");
 
 zip.generateAsync({ type: "blob" }).then(blob => {
   const a = document.createElement("a");
