@@ -143,5 +143,440 @@ sprite.say(&quot;Hello world!&quot;)"></textarea>
   <img src="src/img/robot.png"> AI Assistant
 </button>
 </div>
+<script>
+<!-- AI Assistant Modal -->
+<div id="ai-modal" class="ai-modal">
+  <div class="ai-box">
+    <div class="ai-header">
+      <div>
+        <b>🤖 AI Assistant</b>
+        <small>Fix JavaScript generated from Scratch</small>
+      </div>
+
+      <button onclick="closeAIModal()">×</button>
+    </div>
+
+    <div class="ai-body">
+      <label>What should I fix?</label>
+
+      <textarea
+        id="ai-request"
+        placeholder="Example: Fix the sprite movement"
+      ></textarea>
+
+      <button class="fix-button" onclick="fixJSCode()">
+        Fix Code
+      </button>
+
+      <div id="ai-status"></div>
+
+      <div id="ai-preview" hidden>
+        <label>AI-fixed code</label>
+
+        <pre><code id="ai-code"></code></pre>
+
+        <div class="ai-actions">
+          <button onclick="closeAIModal()">Cancel</button>
+          <button class="apply-button" onclick="applyAICode()">
+            Apply Fix
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.ai-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, .65);
+  align-items: center;
+  justify-content: center;
+  font-family: Arial, sans-serif;
+}
+
+.ai-box {
+  width: min(720px, 92vw);
+  background: #252526;
+  color: white;
+  border: 1px solid #444;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px #0008;
+}
+
+.ai-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #444;
+}
+
+.ai-header b {
+  display: block;
+}
+
+.ai-header small {
+  display: block;
+  margin-top: 4px;
+  color: #999;
+}
+
+.ai-header button {
+  border: 0;
+  background: none;
+  color: #aaa;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.ai-body {
+  padding: 16px;
+}
+
+.ai-body label {
+  display: block;
+  margin-bottom: 7px;
+  color: #ccc;
+  font-size: 13px;
+}
+
+#ai-request {
+  width: 100%;
+  min-height: 90px;
+  box-sizing: border-box;
+  resize: vertical;
+  padding: 10px;
+  background: #1e1e1e;
+  color: white;
+  border: 1px solid #444;
+  border-radius: 5px;
+  outline: none;
+  font-family: Consolas, monospace;
+}
+
+#ai-request:focus {
+  border-color: #007acc;
+}
+
+.fix-button,
+.apply-button {
+  margin-top: 10px;
+  padding: 9px 15px;
+  border: 0;
+  border-radius: 5px;
+  background: #007acc;
+  color: white;
+  cursor: pointer;
+}
+
+.fix-button:hover,
+.apply-button:hover {
+  background: #1689d8;
+}
+
+#ai-status {
+  margin-top: 10px;
+  color: #aaa;
+  font-size: 13px;
+}
+
+#ai-preview {
+  margin-top: 18px;
+}
+
+#ai-code {
+  display: block;
+  max-height: 300px;
+  overflow: auto;
+  padding: 12px;
+  background: #181818;
+  border: 1px solid #444;
+  border-radius: 5px;
+  color: #ddd;
+  font-family: Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+.ai-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ai-actions button {
+  padding: 8px 13px;
+  border: 0;
+  border-radius: 5px;
+  background: #3a3a3a;
+  color: white;
+  cursor: pointer;
+}
+
+.ai-actions .apply-button {
+  background: #168544;
+}
+</style>
+
+<script>
+function openAIModal() {
+  const editor = document.getElementById("js-editor");
+
+  if (!editor) {
+    alert('Could not find <div id="js-editor">.');
+    return;
+  }
+
+  document.getElementById("ai-modal").style.display = "flex";
+  document.getElementById("ai-request").focus();
+}
+
+function closeAIModal() {
+  document.getElementById("ai-modal").style.display = "none";
+}
+
+
+/*
+ * Find the actual code editor INSIDE:
+ *
+ * <div id="js-editor">
+ *     ...
+ * </div>
+ *
+ * This supports a textarea, CodeMirror, Monaco,
+ * or a normal editable element.
+ */
+function getJSFromEditor() {
+  const editor = document.getElementById("js-editor");
+
+  if (!editor) {
+    throw new Error('Could not find <div id="js-editor">.');
+  }
+
+  // Textarea
+  const textarea = editor.querySelector("textarea");
+
+  if (textarea) {
+    return textarea.value;
+  }
+
+  // Contenteditable editor
+  const editable = editor.querySelector("[contenteditable='true']");
+
+  if (editable) {
+    return editable.innerText;
+  }
+
+  // CodeMirror
+  if (editor.querySelector(".CodeMirror")) {
+    const cm = editor.querySelector(".CodeMirror");
+
+    if (cm.CodeMirror) {
+      return cm.CodeMirror.getValue();
+    }
+  }
+
+  // Monaco
+  if (window.monaco) {
+    const monacoEditor = editor.querySelector(".monaco-editor");
+
+    if (monacoEditor) {
+      const models = window.monaco.editor.getModels();
+
+      if (models.length) {
+        return models[0].getValue();
+      }
+    }
+  }
+
+  throw new Error(
+    "Found #js-editor, but could not find a supported code editor inside it."
+  );
+}
+
+
+/*
+ * Put the AI's corrected JavaScript back
+ * into the existing #js-editor.
+ */
+function setJSInEditor(code) {
+  const editor = document.getElementById("js-editor");
+
+  if (!editor) {
+    throw new Error('Could not find <div id="js-editor">.');
+  }
+
+  const textarea = editor.querySelector("textarea");
+
+  if (textarea) {
+    textarea.value = code;
+
+    textarea.dispatchEvent(
+      new Event("input", { bubbles: true })
+    );
+
+    textarea.dispatchEvent(
+      new Event("change", { bubbles: true })
+    );
+
+    return;
+  }
+
+  const editable = editor.querySelector(
+    "[contenteditable='true']"
+  );
+
+  if (editable) {
+    editable.innerText = code;
+
+    editable.dispatchEvent(
+      new InputEvent("input", {
+        bubbles: true,
+        inputType: "insertText",
+        data: code
+      })
+    );
+
+    return;
+  }
+
+  if (editor.querySelector(".CodeMirror")) {
+    const cm = editor.querySelector(".CodeMirror");
+
+    if (cm.CodeMirror) {
+      cm.CodeMirror.setValue(code);
+      return;
+    }
+  }
+
+  if (window.monaco) {
+    const monacoEditor = editor.querySelector(".monaco-editor");
+
+    if (monacoEditor) {
+      const models = window.monaco.editor.getModels();
+
+      if (models.length) {
+        models[0].setValue(code);
+        return;
+      }
+    }
+  }
+
+  throw new Error(
+    "Could not write the fixed code into #js-editor."
+  );
+}
+
+
+let pendingAICode = "";
+
+
+/*
+ * Sends the REAL editor code and the user's
+ * requested fix to your AI backend.
+ */
+async function fixJSCode() {
+  const request =
+    document.getElementById("ai-request").value.trim();
+
+  const status =
+    document.getElementById("ai-status");
+
+  const preview =
+    document.getElementById("ai-preview");
+
+  if (!request) {
+    status.textContent = "Describe what you want fixed.";
+    return;
+  }
+
+  let currentCode;
+
+  try {
+    currentCode = getJSFromEditor();
+  } catch (error) {
+    status.textContent = error.message;
+    return;
+  }
+
+  status.textContent = "AI is analyzing the JavaScript...";
+  preview.hidden = true;
+
+  try {
+    /*
+     * YOUR REAL AI ENDPOINT.
+     *
+     * It receives the actual code from #js-editor.
+     *
+     * Expected response:
+     *
+     * {
+     *   "code": "corrected JavaScript here"
+     * }
+     */
+    const response = await fetch("/api/ai/fix-code", {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        request: request,
+        code: currentCode,
+        language: "javascript",
+        source: "scratch-to-js"
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        "AI request failed: HTTP " + response.status
+      );
+    }
+
+    const data = await response.json();
+
+    if (!data.code) {
+      throw new Error(
+        "The AI did not return corrected JavaScript."
+      );
+    }
+
+    pendingAICode = data.code;
+
+    document.getElementById("ai-code").textContent =
+      pendingAICode;
+
+    preview.hidden = false;
+
+    status.textContent =
+      "Fix ready. Review it before applying.";
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
+
+function applyAICode() {
+  if (!pendingAICode) return;
+
+  try {
+    setJSInEditor(pendingAICode);
+
+    document.getElementById("ai-status").textContent =
+      "Fix applied to #js-editor.";
+
+    setTimeout(closeAIModal, 500);
+  } catch (error) {
+    document.getElementById("ai-status").textContent =
+      error.message;
+  }
+}
+</script>
 </body>
 </html>
